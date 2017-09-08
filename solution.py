@@ -39,10 +39,26 @@ def naked_twins(values):
 
     Returns:
         the values dictionary with the naked twins eliminated from peers.
+    
+        for addressing this, we go through each unit list, choose all the boxes that only have two values
+        compare the values of boxes with each other and if and only if there are two boxes with similar values we can remove those two from their peers
     """
+    for _units in unitlist:
+        twoDigitBoxes =[]
+        for unit in _units:
+            if len(values[unit]) ==2:
+                twoDigitBoxes.append(values[unit])
+        for potentialTwinVal in twoDigitBoxes:
+            if (twoDigitBoxes.count(potentialTwinVal)==2):
+                #we have a case that there are two units having a common two values and thus can remove these values from their peers
+                for peerUnit in _units:
+                    if len(values[peerUnit]) >2 and (potentialTwinVal[0] in values[peerUnit] or potentialTwinVal[1] in values[peerUnit]) and values[peerUnit] != potentialTwinVal:
+                        #if PeerUnit value is the same as potentialTwinVal we don't remove the values since it's one of the twins
+                        assign_value(values, peerUnit, values[peerUnit].replace(potentialTwinVal[1],''))
+                        assign_value(values, peerUnit, values[peerUnit].replace(potentialTwinVal[0],''))
+                twoDigitBoxes.remove(potentialTwinVal)
+    return values
 
-    # Find all instances of naked twins
-    # Eliminate the naked twins as possibilities for their peers
 
 def grid_values(grid):
     """
@@ -88,7 +104,7 @@ def eliminate(values):
     for box in solved_values:
         digit = values[box]
         for peer in peers[box]:
-            values[peer] = values[peer].replace(digit,'')
+            assign_value(values, peer, values[peer].replace(digit,''))
     return values
 
 def only_choice(values):
@@ -101,7 +117,7 @@ def only_choice(values):
         for digit in '123456789':
             dplaces = [box for box in unit if digit in values[box]]
             if len(dplaces) == 1:
-                values[dplaces[0]] = digit
+                assign_value(values, dplaces[0], digit)
     return values
 
 def reduce_puzzle(values):
@@ -116,8 +132,8 @@ def reduce_puzzle(values):
     stalled = False
     while not stalled:
         solved_values_before = len([box for box in values.keys() if len(values[box]) == 1])
-        values = eliminate(values)
-        values = only_choice(values)
+        eliminate(values)
+        only_choice(values)
         solved_values_after = len([box for box in values.keys() if len(values[box]) == 1])
         stalled = solved_values_before == solved_values_after
         if len([box for box in values.keys() if len(values[box]) == 0]):
@@ -127,7 +143,7 @@ def reduce_puzzle(values):
 def search(values):
     "Using depth-first search and propagation, try all possible values."
     # First, reduce the puzzle using the previous function
-    values = reduce_puzzle(values)
+    reduce_puzzle(values)
     if values is False:
         return False ## Failed earlier
     if all(len(values[s]) == 1 for s in boxes): 
@@ -155,8 +171,7 @@ def solve(grid):
     Returns:
         The dictionary representation of the final sudoku grid. False if no solution exists.
     """
-    girdValues= grid_values(grid)
-    return search(girdValues)
+    return search(grid_values(grid))
         
 if __name__ == '__main__':
     diag_sudoku_grid = '2.............62....1....7...6..8...3...9...7...6..4...4....8....52.............3'
