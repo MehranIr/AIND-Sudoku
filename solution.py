@@ -1,6 +1,8 @@
+
 assignments = []
 rows = 'ABCDEFGHI'
 cols = '123456789'
+isDiagonal = True
 
 def cross(A, B):
     "Cross product of elements in A and elements in B."
@@ -11,9 +13,11 @@ boxes = cross(rows, cols)
 row_units = [cross(r, cols) for r in rows]
 column_units = [cross(rows, c) for c in cols]
 square_units = [cross(rs, cs) for rs in ('ABC','DEF','GHI') for cs in ('123','456','789')]
-diagonal_units= [['A1','B2','C3','D4','E5','F6','G7','H8','I9']]
-reverse_diagonal= [['A9','B8','C7','D6','E5','F4','G3','H2','I1']]
-unitlist = row_units + column_units + square_units+ diagonal_units+reverse_diagonal
+diagonal_units = [ [a + b for a,b in zip(rows, cols)], [a + b for a,b in zip(rows, cols[::-1]) ]] 
+unitlist = row_units + column_units + square_units 
+if isDiagonal:
+    unitlist = unitlist + diagonal_units
+
 units = dict((s, [u for u in unitlist if s in u]) for s in boxes)
 peers = dict((s, set(sum(units[s],[]))-set([s])) for s in boxes)
 
@@ -52,11 +56,12 @@ def naked_twins(values):
             if (twoDigitBoxes.count(potentialTwinVal)==2):
                 #we have a case that there are two units having a common two values and thus can remove these values from their peers
                 for peerUnit in _units:
-                    if len(values[peerUnit]) >2 and (potentialTwinVal[0] in values[peerUnit] or potentialTwinVal[1] in values[peerUnit]) and values[peerUnit] != potentialTwinVal:
+                    if (potentialTwinVal[0] in values[peerUnit] or potentialTwinVal[1] in values[peerUnit]) and values[peerUnit] != potentialTwinVal:
                         #if PeerUnit value is the same as potentialTwinVal we don't remove the values since it's one of the twins
                         assign_value(values, peerUnit, values[peerUnit].replace(potentialTwinVal[1],''))
                         assign_value(values, peerUnit, values[peerUnit].replace(potentialTwinVal[0],''))
                 twoDigitBoxes.remove(potentialTwinVal)
+
     return values
 
 
@@ -118,6 +123,7 @@ def only_choice(values):
             dplaces = [box for box in unit if digit in values[box]]
             if len(dplaces) == 1:
                 assign_value(values, dplaces[0], digit)
+#                 values[dplaces[0]] = digit
     return values
 
 def reduce_puzzle(values):
@@ -133,6 +139,7 @@ def reduce_puzzle(values):
     while not stalled:
         solved_values_before = len([box for box in values.keys() if len(values[box]) == 1])
         eliminate(values)
+        naked_twins(values)
         only_choice(values)
         solved_values_after = len([box for box in values.keys() if len(values[box]) == 1])
         stalled = solved_values_before == solved_values_after
@@ -143,14 +150,14 @@ def reduce_puzzle(values):
 def search(values):
     "Using depth-first search and propagation, try all possible values."
     # First, reduce the puzzle using the previous function
-    reduce_puzzle(values)
+    values = reduce_puzzle(values)
     if values is False:
         return False ## Failed earlier
     if all(len(values[s]) == 1 for s in boxes): 
         return values ## Solved!
     # Choose one of the unfilled squares with the fewest possibilities
     n,s = min((len(values[s]), s) for s in boxes if len(values[s]) > 1)
-    print ("n is: " +n +" and s is: " +s )
+#     print ("n is: " +n +" and s is: " +s )
     # Now use recurrence to solve each one of the resulting sudokus, and 
     for value in values[s]:
         new_sudoku = values.copy()
@@ -174,7 +181,7 @@ def solve(grid):
     return search(grid_values(grid))
         
 if __name__ == '__main__':
-    diag_sudoku_grid = '2.............62....1....7...6..8...3...9...7...6..4...4....8....52.............3'
+    diag_sudoku_grid = '9.1....8.8.5.7..4.2.4....6...7......5..............83.3..6......9................'
     display(solve(diag_sudoku_grid))
     try:
         from visualize import visualize_assignments
