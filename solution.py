@@ -1,6 +1,8 @@
+
 assignments = []
 rows = 'ABCDEFGHI'
 cols = '123456789'
+isDiagonal = True
 
 def cross(A, B):
     "Cross product of elements in A and elements in B."
@@ -11,9 +13,11 @@ boxes = cross(rows, cols)
 row_units = [cross(r, cols) for r in rows]
 column_units = [cross(rows, c) for c in cols]
 square_units = [cross(rs, cs) for rs in ('ABC','DEF','GHI') for cs in ('123','456','789')]
-diagonal_units= [['A1','B2','C3','D4','E5','F6','G7','H8','I9']]
-reverse_diagonal= [['A9','B8','C7','D6','E5','F4','G3','H2','I1']]
-unitlist = row_units + column_units + square_units+ diagonal_units+reverse_diagonal
+diagonal_units = [ [a + b for a,b in zip(rows, cols)], [a + b for a,b in zip(rows, cols[::-1]) ]] 
+unitlist = row_units + column_units + square_units 
+if isDiagonal:
+    unitlist = unitlist + diagonal_units
+
 units = dict((s, [u for u in unitlist if s in u]) for s in boxes)
 peers = dict((s, set(sum(units[s],[]))-set([s])) for s in boxes)
 
@@ -135,6 +139,7 @@ def reduce_puzzle(values):
     while not stalled:
         solved_values_before = len([box for box in values.keys() if len(values[box]) == 1])
         eliminate(values)
+        naked_twins(values)
         only_choice(values)
         solved_values_after = len([box for box in values.keys() if len(values[box]) == 1])
         stalled = solved_values_before == solved_values_after
